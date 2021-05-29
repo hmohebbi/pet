@@ -357,11 +357,11 @@ def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, e
                 with open(os.path.join(pattern_iter_output_dir, 'results.txt'), 'w') as fh:
                     fh.write(str(results_dict))
 
-                logger.info("Saving trained model at {}...".format(pattern_iter_output_dir))
-                wrapper.save(pattern_iter_output_dir)
-                train_config.save(os.path.join(pattern_iter_output_dir, 'train_config.json'))
-                eval_config.save(os.path.join(pattern_iter_output_dir, 'eval_config.json'))
-                logger.info("Saving complete")
+#                 logger.info("Saving trained model at {}...".format(pattern_iter_output_dir))
+#                 wrapper.save(pattern_iter_output_dir)
+#                 train_config.save(os.path.join(pattern_iter_output_dir, 'train_config.json'))
+#                 eval_config.save(os.path.join(pattern_iter_output_dir, 'eval_config.json'))
+#                 logger.info("Saving complete")
 
                 if save_unlabeled_logits:
                     logits = evaluate(wrapper, unlabeled_data, eval_config)['logits']
@@ -400,7 +400,8 @@ def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, e
 
     if do_eval:
         logger.info("=== OVERALL RESULTS ===")
-        _write_results(os.path.join(output_dir, 'result_test.txt'), results)
+#         _write_results(os.path.join(output_dir, 'result_test.txt'), results)
+        _custom_final_write_results(os.path.join(output_dir, 'custom_results.txt'), results, config, train_config, eval_config)
     else:
         logger.info("=== ENSEMBLE TRAINING COMPLETE ===")
 
@@ -528,6 +529,32 @@ def _write_results(path: str, results: Dict):
             fh.write(result_str + '\n')
 
 
+def _custom_final_write_results(path: str, results: Dict, config, train_config, eval_config):
+    with open(path, 'w') as fh:
+        fh.write("model_type: " + config.model_type + '\n')
+        fh.write("task: " + config.finetuning_task + '\n')
+        fh.write("train_batch_size: " + train_config.per_gpu_train_batch_size + '\n')
+        fh.write("unlabeled_batch_size: " + train_config.per_gpu_unlabeled_batch_size + '\n')
+        fh.write("eval_batch_size: " + eval_config.per_gpu_eval_batch_size + '\n')
+        fh.write("gradient_accumulation_steps: " + train_config.gradient_accumulation_steps + '\n')
+        
+        for metric in results.keys():
+            for pattern_id, values in results[metric].items():
+                mean = statistics.mean(values)
+                stdev = statistics.stdev(values) if len(values) > 1 else 0
+                result_str = "{}-p{}: {} +- {}".format(metric, pattern_id, mean, stdev)
+                fh.write(result_str + '\n')
+                
+        for metric in results.keys():
+            all_results = [result for pattern_results in results[metric].values() for result in pattern_results]
+            all_mean = statistics.mean(all_results)
+            all_stdev = statistics.stdev(all_results) if len(all_results) > 1 else 0
+            result_str = "{}-all-p: {} +- {}".format(metric, all_mean, all_stdev)
+            logger.info(result_str)
+            fh.write(result_str + '\n')
+        
+    
+    
 def merge_logits(logits_dir: str, output_file: str, reduction: str):
     """
     Merge the logits predicted for unlabeled examples by multiple models.

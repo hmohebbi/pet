@@ -537,6 +537,7 @@ def _custom_final_write_results(path: str, results: Dict, config, train_config, 
         fh.write("unlabeled_batch_size: " + train_config.per_gpu_unlabeled_batch_size + '\n')
         fh.write("eval_batch_size: " + eval_config.per_gpu_eval_batch_size + '\n')
         fh.write("gradient_accumulation_steps: " + train_config.gradient_accumulation_steps + '\n')
+        fh.write("unlabeled_max_steps: " + train_config.sc_max_steps + '\n')
         
         for metric in results.keys():
             for pattern_id, values in results[metric].items():
@@ -552,6 +553,8 @@ def _custom_final_write_results(path: str, results: Dict, config, train_config, 
             result_str = "{}-all-p: {} +- {}".format(metric, all_mean, all_stdev)
             logger.info(result_str)
             fh.write(result_str + '\n')
+        
+        fh.write("results for final classifier:\n")
         
     
     

@@ -544,6 +544,7 @@ def _custom_final_write_results(path: str, results: Dict, config, train_config, 
                 mean = statistics.mean(values)
                 stdev = statistics.stdev(values) if len(values) > 1 else 0
                 result_str = "{}-p{}: {} +- {}".format(metric, pattern_id, mean, stdev)
+                logger.info(result_str)
                 fh.write(result_str + '\n')
                 
         for metric in results.keys():

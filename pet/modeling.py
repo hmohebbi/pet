@@ -371,7 +371,8 @@ def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, e
                     wrapper.model = None
                     wrapper = None
                     torch.cuda.empty_cache()
-
+            
+            torch.save(wrapper.model.roberta, pattern_iter_output_dir)
             # Evaluation
             if do_eval:
                 logger.info("Starting evaluation...")
